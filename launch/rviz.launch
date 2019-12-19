@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+	<arg name="jd_model" default="$(find jetson_discoverer)/urdf/discoverer_v4.xml"/>
+	<arg name="rvizconfig" default="$(find jetson_discoverer)/rviz/jetson_discoverer.rviz"/>
+
+	<param name="robot_description" command="$(find xacro)/xacro $(arg jd_model)"/>
+
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true"/>
+
+</launch>

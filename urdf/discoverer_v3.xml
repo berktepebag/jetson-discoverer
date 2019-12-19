@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<robot name="jetson_discoverer" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+	<!-- materials begin -->
+	<material name="black">
+		<color rgba="0 0 0 1"/>
+	</material>
+
+	<material name="white">
+		<color rgba="1 1 1 1"/>
+	</material>
+
+	<material name="blue">
+		<color rgba="0 0 1 1"/>
+	</material>
+
+	<material name="green">
+		<color rgba="0 0.5 0.5 1"/>
+	</material>
+	<!-- materials end -->
+
+	<xacro:macro name="m_inertia" params="mass">
+		<inertial>
+			<mass value="${mass}"/>
+			<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyx="0.0" iyy="1.0" iyz="0.0" izx="0.0" izy="0.0" izz="1.0"/>
+		</inertial>
+	</xacro:macro>
+
+	<xacro:macro name="m_wheel" params="radius_ length_ prefix suffix reflect">
+		<link name="${suffix}_wheel">
+			<visual>
+				<geometry>
+					<cylinder radius="${radius_}" length="${length_}"/>
+				</geometry>
+				<origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+				<material name="black"/>
+			</visual>
+
+			<collision>
+				<geometry>
+					<cylinder radius="${radius_}" length="${length_}"/>
+				</geometry>
+				<origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+			</collision>
+
+			<xacro:m_inertia mass="0.05"/>
+		</link>
+
+		<joint name="${suffix}_wheel_joint" type="continuous">
+			<parent link="${prefix}"/>
+			<child link="${suffix}_wheel"/>
+			<origin xyz="0.03 ${reflect*0.052} -0.013" rpy="0 0 0"/>
+			<axis xyz="0 1 0"/>
+			<limit effort="30" velocity="0.5"/>
+		</joint>	
+
+		<transmission name="${suffix}_wheel_transmission">
+			<type>transmission_interface/SimpleTransmission</type>
+			<joint name="${suffix}_wheel_joint">
+				<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+			</joint>
+
+			<actuator name="${suffix}_wheel_motor">
+				<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>			
+		</transmission>	
+
+		<gazebo reference="${suffix}_wheel">
+			<mu1 value="20.0"/>
+			<mu2 value="10.0"/>
+			<kp value="1000000.0"/>
+			<kd value="1.0"/>
+		</gazebo>
+
+	</xacro:macro>
+
+
+	<link name="base_link">
+	</link>	
+
+
+	<link name="chassis">
+		<visual>
+			<geometry>
+				<mesh filename="package://jetson_discoverer/meshes/chassis.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+		</visual>
+
+		<collision>
+			<geometry>
+				<!-- <box size="0.135 0.09 0.05"/> -->
+				<mesh filename="package://jetson_discoverer/meshes/chassis.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<!-- <origin xyz="0 0 0" rpy="0 0 0"/> -->
+			<origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+		</collision>
+
+		<xacro:m_inertia mass="0.5"/>
+
+	</link>
+
+	<joint name="base_chassis_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="chassis"/>
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+	</joint>
+
+
+	<!-- left wheel -->
+	<xacro:m_wheel radius_="0.03" length_="0.01" prefix="chassis" suffix="left" reflect="-1"/>
+
+	<!-- right wheel -->
+	<xacro:m_wheel radius_="0.03" length_="0.01" prefix="chassis" suffix="right" reflect="1"/>
+
+
+	<!-- caster wheel base-->
+	<link name="caster_wheel_base">
+		<visual>
+			<geometry>
+				<mesh filename="package://jetson_discoverer/meshes/caster_shroud_65mm.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+			<material name="white"/>
+		</visual>
+	</link>
+
+	<joint name="base_casterwheelbase_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="caster_wheel_base"/>
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+	</joint>
+
+	<!-- caster wheel -->
+	<link name="caster_wheel">
+		<visual>
+			<geometry>
+				<sphere radius="${0.0625/4}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+
+		<collision>
+			<geometry>
+				<sphere radius="${0.0625/4}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+
+		<xacro:m_inertia mass="0.1"/>
+	</link>
+
+	<joint name="base_casterwheel_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="caster_wheel"/>
+		<origin xyz="-0.05 0 -0.025" rpy="0 0 0"/>
+		<axis xyz="1 1 0"/>
+	</joint>
+
+	<gazebo reference="caster_wheel">
+		<mu1 value="0.0"/>
+		<mu2 value="0.0"/>
+		<kp value="10000000.0"/>
+		<kd value="1.0"/>
+	</gazebo>
+
+	<!-- camera mount -->
+	<link name="camera_mount">
+		<visual>
+			<geometry>
+				<mesh filename="package://jetson_discoverer/meshes/camera_mount.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${pi/2} 0 -${pi/2}"/>
+			<material name="white"/>
+		</visual>
+	</link>
+
+	<joint name="base_cameramount_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="camera_mount"/>
+		<origin xyz="0 0 0.023" rpy="0 0 0"/>
+	</joint>
+
+	<!-- camera -->
+	<link name="camera">
+		<visual>
+			<geometry>
+				<cylinder radius="0.005" length="0.01"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 -${pi/3} 0"/>
+			<material name="blue"/>
+		</visual>
+	</link>
+
+	<joint name="cameramount_camera_joint" type="fixed">
+		<parent link="camera_mount"/>
+		<child link="camera"/>
+		<origin xyz="0.05 0 0.015" rpy="0 0 0"/>
+	</joint>
+
+	<!-- jetson + battery -->
+	<link name="jetson">
+		<visual>
+			<geometry>
+				<box size="0.1 0.08 0.015"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="green"/>
+		</visual>
+
+		<collision>
+			<geometry>
+				<box size="0.1 0.08 0.015"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+
+		<xacro:m_inertia mass="10.0"/>
+	</link>
+
+	<joint name="base_jetson_joint" type="fixed">
+		<parent link="chassis"/>
+		<child link="jetson"/>
+		<origin xyz="-0.015 0 0.035" rpy="0 0 0"/>
+	</joint>
+
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/jetson_discoverer/</robotNamespace>
+		</plugin>
+	</gazebo>
+
+</robot>

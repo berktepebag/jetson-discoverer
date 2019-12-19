@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<launch>
+	<arg name="model" default="$(find jetson_discoverer)/urdf/discoverer_v3.xml"/>
+	<arg name="world" default="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+	<!-- call gazebo.launch -->
+	<include file="$(find jetson_discoverer)/launch/gazebo.launch">
+		<arg name="jd_model" value="$(arg model)"/>
+		<arg name="gazebo_world" value="$(arg world)"/>
+	</include>
+
+	<!-- call rviz.launch -->
+<!-- 	<include file="$(find jetson_discoverer)/launch/rviz.launch">
+		<arg name="jd_model" value="$(arg model)"/>
+	</include> -->
+	<arg name="rvizconfig" default="$(find jetson_discoverer)/rviz/jetson_discoverer.rviz"/>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true"/>
+
+	<!-- convert joint states to TF transforms for rviz, etc -->
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+    respawn="false" output="screen"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+    <!-- Load joint controller configurations from YAML file to parameter server -->
+    <rosparam file="$(find jetson_discoverer)/config/wheels.yaml" command="load"/>
+
+    <!-- Load the diff drive controller -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/jetson_discoverer" args="mobile_base_controller joint_State_controller"/>
+
+</launch>
