@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot name="jetson_discoverer" xmlns:xacro="http://www.ros.org/wiki/xacro">
-	<static>false</static>
+	<static>true</static>
 
 	<!-- materials begin -->
 	<material name="black">
@@ -46,10 +46,10 @@
 				<surface>
 					<friction>
 						<ode>
-							<kp>1000000</kp>
+							<kp>1000000.0</kp>
 							<kd>1</kd>
-							<mu>0.5</mu>
-							<mu2>0.5</mu2>
+							<mu>200.0</mu>
+							<mu2>100.0</mu2>
 						</ode>
 					</friction>
 				</surface>
@@ -61,7 +61,7 @@
 		<joint name="${suffix}_wheel_joint" type="continuous">
 			<parent link="${prefix}"/>
 			<child link="${suffix}_wheel"/>
-			<origin xyz="0.03 ${reflect*0.052} -0.013" rpy="0 0 0"/>
+			<origin xyz="0.03 ${reflect*0.052} -0.015" rpy="0 0 0"/>
 			<axis xyz="0 1 0"/>
 			<limit effort="30" velocity="0.5"/>
 		</joint>	
@@ -77,18 +77,6 @@
 				<mechanicalReduction>1</mechanicalReduction>
 			</actuator>			
 		</transmission>	
-
-<!-- 		<gazebo reference="${suffix}_wheel">
-			<mu1 value="20.0"/>
-			<mu2 value="10.0"/>
-			<kp value="1000000.0"/>
-			<kd value="1.0"/>
-			<mu1 value="0.5"/>
-			<mu2 value="0.5"/>
-			<kp value="100000.0"/>
-			<kd value="1.0"/>
-		</gazebo> -->
-
 	</xacro:macro>
 
 
@@ -113,8 +101,9 @@
 			<origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
 		</collision>
 
-		<xacro:m_inertia mass="0.5"/>
+		<xacro:m_inertia mass="1.0"/>
 
+		<!-- caster wheel -->
 		<visual name='caster_visual'>
 			<geometry>
 				<sphere radius="${0.0625/4}"/>
@@ -127,15 +116,15 @@
 			<geometry>
 				<sphere radius="${0.0625/4}"/>
 			</geometry>
-			<origin xyz="-0.05 0 -0.025" rpy="0 0 0"/>
+			<origin xyz="-0.05 0 -0.0275" rpy="0 0 0"/>
 
 			<surface>
 				<friction>
 					<ode>
-						<mu>0</mu>
-						<mu2>0</mu2>
-						<slip1>1.0</slip1>
-						<slip2>1.0</slip2>
+						<mu>0.2</mu>
+						<mu2>0.2</mu2>
+			<!-- 			<slip1>1.0</slip1>
+						<slip2>1.0</slip2> -->
 					</ode>
 				</friction>
 			</surface>
@@ -149,6 +138,37 @@
 			<material name="white"/>
 		</visual>
 
+		<!-- camera mount -->
+		<visual name="camera_mount">
+			<geometry>
+				<mesh filename="package://jetson_discoverer/meshes/camera_mount.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${pi/2} 0 -${pi/2}"/>
+			<material name="white"/>
+		</visual>
+		<collision name="camera_mount">
+			<geometry>
+				<mesh filename="package://jetson_discoverer/meshes/camera_mount.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="${pi/2} 0 -${pi/2}"/>
+		</collision>
+
+		<!-- jetson + battery -->
+		<visual name="jetson">
+			<geometry>
+				<box size="0.1 0.08 0.015"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="green"/>
+		</visual>
+
+		<collision name="jetson">
+			<geometry>
+				<box size="0.1 0.08 0.015"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+
 	</link>
 
 	<joint name="base_chassis_joint" type="fixed">
@@ -157,55 +177,11 @@
 		<origin xyz="0 0 0" rpy="0 0 0"/>
 	</joint>
 
-
 	<!-- left wheel -->
 	<xacro:m_wheel radius_="0.03" length_="0.01" prefix="chassis" suffix="left" reflect="-1"/>
 
 	<!-- right wheel -->
 	<xacro:m_wheel radius_="0.03" length_="0.01" prefix="chassis" suffix="right" reflect="1"/>
-
-
-	<!-- caster wheel base-->
-<!-- 	<link name="caster_wheel_base">
-		<visual>
-			<geometry>
-				<mesh filename="package://jetson_discoverer/meshes/caster_shroud_65mm.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
-			<material name="white"/>
-		</visual>
-	</link>
-
-	<joint name="base_casterwheelbase_joint" type="fixed">
-		<parent link="base_link"/>
-		<child link="caster_wheel_base"/>
-		<origin xyz="0 0 0" rpy="0 0 0"/>
-	</joint> -->
-
-	<!-- camera mount -->
-	<link name="camera_mount">
-		<visual>
-			<geometry>
-				<mesh filename="package://jetson_discoverer/meshes/camera_mount.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="${pi/2} 0 -${pi/2}"/>
-			<material name="white"/>
-		</visual>
-		<collision>
-			<geometry>
-				<mesh filename="package://jetson_discoverer/meshes/camera_mount.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="${pi/2} 0 -${pi/2}"/>
-		</collision>
-
-		<xacro:m_inertia mass="0.001"/>
-	</link>
-
-	<joint name="base_cameramount_joint" type="fixed">
-		<parent link="chassis"/>
-		<child link="camera_mount"/>
-		<origin xyz="0 0 0.023" rpy="0 0 0"/>
-	</joint>
 
 	<!-- camera -->
 	<xacro:include filename="$(find jetson_discoverer)/urdf/camera.gazebo"/>
@@ -215,49 +191,23 @@
 			<geometry>
 				<cylinder radius="0.005" length="0.01"/>
 			</geometry>
-			<origin xyz="0 0 0" rpy="0 ${pi/6} 0"/>
+			<origin xyz="0 0 0" rpy="0 ${pi/2+pi/18} 0"/>
 			<material name="blue"/>
 		</visual>
 		<collision>
 			<geometry>
 				<cylinder radius="0.005" length="0.01"/>
 			</geometry>
-			<origin xyz="0 0 0" rpy="0 ${pi/6} 0"/>
+			<origin xyz="0 0 0" rpy="0 ${pi/2+pi/18} 0"/>
 		</collision>
 
 		<xacro:m_inertia mass="0.001"/>
 	</link>
 
 	<joint name="cameramount_camera_joint" type="fixed">
-		<parent link="camera_mount"/>
-		<child link="camera_link"/>
-		<origin xyz="0.05 0 0.015" rpy="0 ${pi/9} 0"/>
-	</joint>
-
-	<!-- jetson + battery -->
-	<link name="jetson">
-		<visual>
-			<geometry>
-				<box size="0.1 0.08 0.015"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="green"/>
-		</visual>
-
-		<collision>
-			<geometry>
-				<box size="0.1 0.08 0.015"/>
-			</geometry>
-			<origin xyz="0 0 0" rpy="0 0 0"/>
-		</collision>
-
-		<xacro:m_inertia mass="1.0"/>
-	</link>
-
-	<joint name="base_jetson_joint" type="fixed">
 		<parent link="chassis"/>
-		<child link="jetson"/>
-		<origin xyz="-0.015 0 0.035" rpy="0 0 0"/>
+		<child link="camera_link"/>
+		<origin xyz="0.05 0 0.015" rpy="0 ${pi/6} 0"/>
 	</joint>
 
 	<!-- lidar -->
@@ -272,21 +222,21 @@
 		</visual>
 		<collision>
 			<geometry>
-				<mesh filename="package://jetson_discoverer/meshes/rplidar_main.stl" scale="0.001 0.001 0.001"/>
+<!-- 				<mesh filename="package://jetson_discoverer/meshes/rplidar_main.stl" scale="0.001 0.001 0.001"/>
+			 -->			
+			<box size="0.02 0.02 0.02"/>
 			</geometry>
-			<origin xyz="0.05 -0.035 0" rpy="${pi/2} 0 ${pi}"/>
+			<origin xyz="0 0 0.05" rpy="0 0 0"/>
 		</collision>
 
-		<xacro:m_inertia mass="0.01"/>
+		<xacro:m_inertia mass="0.1"/>
 	</link>
 
 	<joint name="chasis_lidar_joint" type="fixed">
-		<parent link="jetson"/>
+		<parent link="chassis"/>
 		<child link="lidar_link"/>
 		<origin xyz="0 0 0" rpy="0 0 0"/>
 	</joint>
-
-
 
 	<gazebo>
 		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
